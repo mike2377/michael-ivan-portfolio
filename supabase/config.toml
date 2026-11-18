@@ -1,0 +1,4 @@
+project_id = "michael-ivan-portfolio"
+
+[functions.contact-message]
+verify_jwt = false

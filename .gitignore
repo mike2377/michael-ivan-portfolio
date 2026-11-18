@@ -1,0 +1,56 @@
+# Environment files and local credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+
+# Local Supabase state
+/supabase/.temp/
+/supabase/.branches/
+/supabase/.cache/
+
+# Local credentials and agent configuration
+/.aws/
+/.codex/
+/.agents/
+
+# Dependencies and build output
+node_modules/
+dist/
+dist-ssr/
+coverage/
+.vite/
+.turbo/
+.vercel/
+.parcel-cache/
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+._*
+
+# Editors and IDEs
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+.#*
+*.bak
+*.tmp
