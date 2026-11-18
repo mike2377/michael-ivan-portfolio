@@ -1,7 +1,7 @@
 // Supabase Edge Function: stores contact messages before attempting notification.
 // The function is public by design; enforce origin, validation, honeypot, and rate limits here.
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
-import { getTrustedClientIp, matchesStoredContent, parseContactPayload, readJsonBody } from './security.ts';
+import { createRateLimitDiagnostics, getTrustedClientIp, matchesStoredContent, parseContactPayload, readJsonBody } from './security.ts';
 import type { ContactPayload } from './security.ts';
 
 const maxBodyBytes = 12_000;
@@ -103,10 +103,13 @@ Deno.serve(async (request) => {
   if (!payload) return jsonResponse({ error: 'Please check the form fields and try again.', code: 'invalid_submission', outcome: 'not_stored' }, 400, origin);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  let serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const legacyServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const secretKeysValue = Deno.env.get('SUPABASE_SECRET_KEYS');
+  let serviceRoleKey = legacyServiceRoleKey;
+  const authenticationPath = legacyServiceRoleKey ? 'legacy' : 'secret-key fallback';
   if (!serviceRoleKey) {
     try {
-      const keys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}') as Record<string, string>;
+      const keys = JSON.parse(secretKeysValue ?? '{}') as Record<string, string>;
       serviceRoleKey = keys.default;
     } catch {
       serviceRoleKey = undefined;
@@ -133,7 +136,13 @@ Deno.serve(async (request) => {
     });
 
     if (rateLimitError) {
-      console.error('Contact rate-limit check failed.');
+      console.error('Contact rate-limit check failed.', {
+        ...createRateLimitDiagnostics(rateLimitError, {
+          serviceRoleKeyPresent: Boolean(legacyServiceRoleKey),
+          secretKeysPresent: Boolean(secretKeysValue),
+          authenticationPath,
+        }),
+      });
       return jsonResponse({ error: 'The contact form is temporarily unavailable.', code: 'rate_limit_unavailable', outcome: 'not_stored' }, 503, origin);
     }
     if (!withinLimit) return jsonResponse({ error: 'Too many messages. Please wait before trying again.', code: 'rate_limited', outcome: 'not_stored' }, 429, origin);

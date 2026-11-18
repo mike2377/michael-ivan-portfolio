@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getTrustedClientIp, matchesStoredContent, normalizeIpAddress, parseContactPayload, readJsonBody } from './security.ts';
+import { createRateLimitDiagnostics, getTrustedClientIp, matchesStoredContent, normalizeIpAddress, parseContactPayload, readJsonBody } from './security.ts';
 
 const validPayload = {
   submissionKey: '123e4567-e89b-42d3-a456-426614174000',
@@ -67,4 +67,51 @@ test('uses only the first Supabase X-Forwarded-For address and rejects alternate
 
   const malformed = new Request('https://example.test', { headers: { 'x-forwarded-for': 'not-an-ip, 203.0.113.7' } });
   assert.equal(getTrustedClientIp(malformed), null);
+});
+
+test('rate-limit diagnostics exclude arbitrary RPC messages and retain only validated metadata', () => {
+  const sensitiveMessages = [
+    'Bearer eyJhbGciOiJIUzI1NiJ9.secret.signature',
+    'API key sb_secret_private-value',
+    'Client address 2001:db8::1',
+    'Contact visitor@example.test',
+    'Personal information: Michael Ivan, private inquiry',
+  ];
+  const error = Object.assign(new Error(sensitiveMessages.join(' | ')), {
+    code: '42501',
+    status: 403,
+    details: sensitiveMessages.join(' | '),
+    hint: sensitiveMessages.join(' | '),
+    stack: sensitiveMessages.join(' | '),
+  });
+  const diagnostics = createRateLimitDiagnostics(error, {
+    authenticationPath: 'secret-key fallback',
+    serviceRoleKeyPresent: false,
+    secretKeysPresent: true,
+  });
+  const serialized = JSON.stringify(diagnostics);
+
+  assert.deepEqual(diagnostics, {
+    errorCode: '42501',
+    httpStatus: 403,
+    authenticationPath: 'secret-key fallback',
+    serviceRoleKeyPresent: false,
+    secretKeysPresent: true,
+  });
+  for (const message of sensitiveMessages) assert.equal(serialized.includes(message), false);
+  assert.equal('message' in diagnostics, false);
+});
+
+test('rate-limit diagnostics omit invalid code and HTTP status values', () => {
+  assert.deepEqual(createRateLimitDiagnostics({ code: 'Bearer token', status: 700 }, {
+    authenticationPath: 'legacy',
+    serviceRoleKeyPresent: true,
+    secretKeysPresent: false,
+  }), {
+    errorCode: undefined,
+    httpStatus: undefined,
+    authenticationPath: 'legacy',
+    serviceRoleKeyPresent: true,
+    secretKeysPresent: false,
+  });
 });

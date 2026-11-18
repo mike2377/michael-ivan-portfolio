@@ -7,6 +7,37 @@ export interface ContactPayload {
   website: string;
 }
 
+export type RateLimitAuthenticationPath = 'legacy' | 'secret-key fallback';
+
+export function createRateLimitDiagnostics(
+  error: unknown,
+  configuration: {
+    authenticationPath: RateLimitAuthenticationPath;
+    serviceRoleKeyPresent: boolean;
+    secretKeysPresent: boolean;
+  },
+): {
+  errorCode: string | undefined;
+  httpStatus: number | undefined;
+  authenticationPath: RateLimitAuthenticationPath;
+  serviceRoleKeyPresent: boolean;
+  secretKeysPresent: boolean;
+} {
+  const errorFields = error && typeof error === 'object' ? error as Record<string, unknown> : {};
+  const code = errorFields.code;
+  const status = errorFields.status;
+
+  return {
+    errorCode: typeof code === 'string' && /^[A-Z0-9_-]{1,32}$/i.test(code) ? code : undefined,
+    httpStatus: typeof status === 'number' && Number.isInteger(status) && status >= 100 && status <= 599
+      ? status
+      : undefined,
+    authenticationPath: configuration.authenticationPath,
+    serviceRoleKeyPresent: configuration.serviceRoleKeyPresent,
+    secretKeysPresent: configuration.secretKeysPresent,
+  };
+}
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
