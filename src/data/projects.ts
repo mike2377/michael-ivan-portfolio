@@ -122,7 +122,7 @@ export const projects: Project[] = [
     technologies: ['HTML5', 'CSS3', 'JavaScript', 'GitHub API', 'Fetch API'],
     categories: ['Independent Project'],
     screenshots: [
-      { ...screenshot('github-profile-viewer/Galaxy-Note20-Ultra-127.0.0.1 (2).webp', 'GitHub Profile Viewer showing a profile card with avatar, bio and public account statistics.', { fit: 'contain' }) },
+      { ...screenshot('github-profile-viewer/Galaxy-Note20-Ultra-127.0.0.1-2.webp', 'GitHub Profile Viewer showing a profile card with avatar, bio and public account statistics.', { fit: 'contain' }) },
       { ...screenshot('github-profile-viewer/iPhone-13-PRO-127.0.0.1.webp', 'GitHub Profile Viewer in its initial state with the username search field.', { fit: 'contain' }) },
       { ...screenshot('github-profile-viewer/Galaxy-Note20-Ultra-127.0.0.1.webp', 'GitHub Profile Viewer showing a user-not-found message.', { fit: 'contain' }) },
     ],

@@ -69,7 +69,7 @@ export const projectImageDimensions = {
     "thumbnailWidth": 320,
     "smallWidth": 480
   },
-  "github-profile-viewer/Galaxy-Note20-Ultra-127.0.0.1 (2).webp": {
+  "github-profile-viewer/Galaxy-Note20-Ultra-127.0.0.1-2.webp": {
     "width": 768,
     "height": 1660,
     "mediumWidth": 768,
